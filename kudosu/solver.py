@@ -1,0 +1,2 @@
+class SudokuSolver:
+    pass

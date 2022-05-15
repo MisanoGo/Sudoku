@@ -1,0 +1,2 @@
+class SudokuPuzzle:
+    pass
