@@ -1,2 +1,7 @@
+from decart import SudokuDecart
+
 class SudokuPuzzle:
-    pass
+    def __init__(self,sd: SudokuDecart) -> None: ...
+
+    @staticmethod
+    def create(self): ...
