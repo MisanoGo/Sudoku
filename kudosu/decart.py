@@ -1,31 +1,34 @@
-from random import randint
+from random import choice, randint
 from typing import Generator ,List ,Tuple ,Dict
 from itertools import product
 
-from utils import checkListDepublicate as cld,noneable
+from utils import NoneFilter, checkListDepublicate as cld,noneable
 
 class SudokuDecart:
-    range10 = range(1,10)
-    cleanSudoku = {(x,y):None for x,y in product(range10,range10)}
+    range9 = range(1,10)
+    cleanSudoku = {(x,y):None for x,y in product(range9,range9)}
 
     def __init__(self, decart= None) -> None:
         self.decart: Dict[Tuple[int,int]:int]= noneable(decart,self.cleanSudoku)
 
-    def insert(self, x: int, y: int, num: int):
+    def set(self, x: int, y: int, num: int):
         xy = (x,y)
         decart_copy = self.decart.copy()
         self.decart[xy] = num
 
-        if not self.checkCoordDepublicate(x,y):
+        if self.checkCoordDepublicate(x,y):
             self.decart = decart_copy
             # TODO : raise Exception of depublicate value
 
-    def randInsert(self, x: int = None, y: int = None, n: int = None):
-        x = noneable(x, randint(1,9))
-        y = noneable(y, randint(1,9))
-        n = noneable(n, randint(1,9))
+    def randSet(self, x: int = None, y: int = None, n: int = None):
+        n   = noneable(n, randint(1,9))
+        x,y = choice(list(self.blankFields.items()))[0]
 
-        self.insert(x,y,n)
+        self.set(x,y,n)
+
+    @property
+    def blankFields(self):
+        return dict(filter(lambda i : i[1] is None, list(self.decart.items())))
 
     def get(self, x: int, y: int) -> int:
         xy = (x,y)
@@ -34,7 +37,10 @@ class SudokuDecart:
     def getList(self, *coord: Tuple[int,int]) -> List[int]:
         return [self.get(*xy) for xy in coord]
 
-    def remove(self, x: int, y: int) -> int:
+    def getCAR(self, x: int, y: int) -> List[List[int]]:
+        return [self.row(y),self.column(x),self.area(x,y)]
+
+    def unset(self, x: int, y: int) -> int:
         xy = (x,y)
         n = self.get(x,y)
 
@@ -45,20 +51,12 @@ class SudokuDecart:
         self.decart = self.cleanSudoku
 
     def row(self, y: int) -> List[int]:
-        if y in self.range10:
-            return [self.decart[(x,y)] for x in self.range10]
-
-    def rowList(self) -> Generator[List[int],None,None]:
-        for y in self.range10:
-            yield self.row(y)
+        if y in self.range9:
+            return [self.decart[(x,y)] for x in self.range9]
 
     def column(self, x: int) -> List[int]:
-        if x in self.range10:
-            return [self.decart[(x,y)] for y in self.range10]
-
-    def columnList(self) -> Generator[List[int],None,None]:
-        for x in self.range10:
-            yield self.column(x)
+        if x in self.range9:
+            return [self.decart[(x,y)] for y in self.range9]
 
     def area(self, x: int, y: int) -> List[int]:
         """ return list of numbers in area of 3*3"""
@@ -74,19 +72,26 @@ class SudokuDecart:
         # get all of items coords in area and get theres numbers
         return self.getList(*product(range(sx,dx+1),range(sy,dy+1)))
 
-    def areaList(self) -> Generator[List[int],None,None]:
-        range3 = range(1,3)
-        for ax in range3:
-            for ay in range3:
-                yield self.barea(ax,ay)
+    @property
+    def rowList(self) -> List[List[int]]:
+        return [self.row(y) for y in self.range9]
+
+    @property
+    def columnList(self) -> List[List[int]]:
+        return [self.column(x) for x in self.range9]
+
+    @property
+    def areaList(self) -> List[List[int]]:
+        range3 = range(1,4)
+        return [self.nArea(ax,ay) for ax,ay in product(range3,range3)]
 
     @property
     def check(self) -> bool:
-        ivl = self.decart.values() # item value list
+        ivl = NoneFilter(self.decart.values()) # item value list
 
-        if not any([iv is not None for iv in ivl]):
-            if sum(ivl) == (9*(9+1)//2)*9:
-                return self.checkDepublicate
+        if len(self.blankFields) == 0 : # check to dont exists blank fields
+            if sum(ivl) == (9*(9+1)//2)*9: # check sum of all numbers is 405
+                return self.checkDepublicate # go to check all of numbers depublicates
         return False
 
     @property
@@ -95,4 +100,4 @@ class SudokuDecart:
         return cld(*nl)
 
     def checkCoordDepublicate(self, x: int, y: int) -> bool:
-        return cld(self.row(y),self.column(x),self.area(x,y))
+        return cld(*self.getCAR(x,y))
