@@ -15,7 +15,7 @@ def checkDepublicate(itrable:Iterable):
     return checkCountEqualty(set(itrable),itrable)
 
 def checkListDepublicate(*itrables:Iterable):
-    return all([checkDepublicate(itrable) for itrable in itrables])
+    return not all([checkDepublicate(itrable) for itrable in itrables])
 
 def noneable(a: Any, b: Any):
     return a if a is not None else b
